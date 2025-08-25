@@ -1,0 +1,12 @@
+/* HanziWriter 容器样式 */
+.hanzi-writer-container {
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.hanzi-writer-container svg {
+  background: transparent;
+  border: none;
+  outline: none;
+}

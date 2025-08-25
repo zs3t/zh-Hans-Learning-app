@@ -1,0 +1,44 @@
+{
+  "name": "zh-hans-learning-app",
+  "version": "1.0.0",
+  "description": "一个基于 Next.js 的交互式中文汉字学习应用",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "deploy": "bash scripts/deploy.sh",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop zh-hans-learning-app",
+    "pm2:restart": "pm2 restart zh-hans-learning-app",
+    "pm2:logs": "pm2 logs zh-hans-learning-app"
+  },
+  "dependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "autoprefixer": "^10.4.0",
+    "better-sqlite3": "^9.6.0",
+    "clsx": "^2.1.1",
+    "hanzi-writer": "^3.5.0",
+    "lucide-react": "^0.400.0",
+    "next": "^13.5.0",
+    "pinyin-pro": "^3.27.0",
+    "postcss": "^8.4.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.0",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^13.5.0"
+  },
+  "engines": {
+    "node": ">=18.16.0"
+  }
+}
