@@ -225,6 +225,12 @@ zh-hans-learning-app/
    - 检查文件权限：`chmod +x scripts/deploy.sh`
    - 查看 PM2 日志：`pm2 logs zh-hans-learning-app`
 
+5. **安全状态** ✅
+   - 所有已知安全漏洞已修复
+   - Next.js 版本：14.2.32（从 13.5.0 升级）
+   - Node.js 版本：v22.16.0（从 v18.16.1 升级）
+   - 详见 [SECURITY.md](SECURITY.md)
+
 ### 日志查看
 
 ```bash

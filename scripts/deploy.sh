@@ -7,13 +7,20 @@ set -e  # 遇到错误立即退出
 
 echo "🚀 开始部署中文汉字学习应用..."
 
+# 检查并加载 NVM（如果存在）
+if [ -f "$HOME/.nvm/nvm.sh" ]; then
+    echo "🔧 加载 NVM..."
+    source "$HOME/.nvm/nvm.sh"
+fi
+
 # 检查 Node.js 版本
 echo "📋 检查 Node.js 版本..."
 NODE_VERSION=$(node -v | cut -d'v' -f2)
-REQUIRED_VERSION="18.16.0"
+REQUIRED_VERSION="18.17.0"
 
 if [ "$(printf '%s\n' "$REQUIRED_VERSION" "$NODE_VERSION" | sort -V | head -n1)" != "$REQUIRED_VERSION" ]; then
     echo "❌ Node.js 版本过低，需要 >= $REQUIRED_VERSION，当前版本: $NODE_VERSION"
+    echo "建议使用: nvm install --lts && nvm use --lts"
     exit 1
 fi
 

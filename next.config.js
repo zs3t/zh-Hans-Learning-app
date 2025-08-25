@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // 跳过 Node.js 版本检查（用于兼容性）
+  experimental: {
+    skipNodeVersionCheck: true,
+  },
 
   typescript: {
     // 在构建时忽略 TypeScript 错误

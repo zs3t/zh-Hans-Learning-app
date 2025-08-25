@@ -9,8 +9,10 @@ export const metadata: Metadata = {
   description: '一个基于 Next.js 的交互式中文汉字学习应用，支持汉字显示、拼音学习、笔画动画和语音朗读',
   keywords: '中文学习,汉字学习,拼音,笔画,语音朗读',
   authors: [{ name: '中文学习应用' }],
-  viewport: 'width=device-width, initial-scale=1',
 }
+
+// Next.js 14+ 新规范：单独导出 viewport
+export const viewport = 'width=device-width, initial-scale=1'
 
 export default function RootLayout({
   children,
@@ -21,7 +23,6 @@ export default function RootLayout({
     <html lang="zh-CN">
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className={inter.className}>
