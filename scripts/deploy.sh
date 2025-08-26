@@ -37,7 +37,7 @@ echo "✅ npm 检查通过: $(npm -v)"
 
 # 安装依赖
 echo "📦 安装依赖..."
-npm ci --production=false
+npm ci --include=dev
 
 # 构建应用
 echo "🔨 构建应用..."

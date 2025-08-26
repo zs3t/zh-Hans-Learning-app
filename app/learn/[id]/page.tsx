@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Volume2, Eye, SkipForward, ArrowLeft } from "lucide-react";
+import { Eye, SkipForward, ArrowLeft } from "lucide-react";
 import dynamic from 'next/dynamic';
-import { IOSSpeechFix } from '../../../lib/iosSpeechFix';
 import { getPinyinForCharacter } from '../../../lib/pinyin';
+import AudioPlayer from '../../../components/AudioPlayer';
 
 // 动态导入StrokeAnimation组件
 const StrokeAnimation = dynamic(() => import('../../../components/StrokeAnimation'), {
@@ -60,20 +60,7 @@ export default function LearnPage() {
   const [showStrokes, setShowStrokes] = useState(false);
   const [pinyin, setPinyin] = useState<string[]>([]);
 
-  // 文字转语音功能
-  const speakPinyin = (pinyinText: string) => {
-    if (currentCharacter && IOSSpeechFix.isSupported()) {
-      // 使用 iOS 优化的语音播放
-      IOSSpeechFix.speakSync(currentCharacter.char, {
-        rate: 0.8,
-        pitch: 1,
-        volume: 1,
-        lang: 'zh-CN'
-      });
-    } else {
-      console.warn('语音合成不支持或没有当前字符');
-    }
-  };
+  // 注意：语音播放现在由 AudioPlayer 组件处理，不需要单独的函数
 
   // 获取随机汉字
   const getRandomCharacter = () => {
@@ -181,14 +168,11 @@ export default function LearnPage() {
                 {pinyin.map((pinyinText, index) => (
                   <div key={index} className="flex items-center gap-2 bg-accent/10 rounded-lg px-4 py-2">
                     <span className="text-2xl font-sans font-medium text-accent">{pinyinText}</span>
-                    <Button
+                    <AudioPlayer
+                      text={currentCharacter?.char || ''}
                       size="sm"
                       variant="ghost"
-                      onClick={() => speakPinyin(pinyinText)}
-                      className="h-8 w-8 p-0 hover:bg-accent/20"
-                    >
-                      <Volume2 className="h-4 w-4 text-accent" />
-                    </Button>
+                    />
                   </div>
                 ))}
               </div>
@@ -240,6 +224,8 @@ export default function LearnPage() {
                         size={200}
                         autoPlay={true}
                         speed={1}
+                        loop={true}
+                        loopDelay={3000}
                       />
                     </div>
                   </div>

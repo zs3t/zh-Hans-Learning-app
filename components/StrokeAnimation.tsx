@@ -8,16 +8,21 @@ interface StrokeAnimationProps {
   size?: number;
   autoPlay?: boolean;
   speed?: number;
+  loop?: boolean;
+  loopDelay?: number;
 }
 
-export default function StrokeAnimation({ 
-  character, 
-  size = 240, 
-  autoPlay = true, 
-  speed = 1 
+export default function StrokeAnimation({
+  character,
+  size = 240,
+  autoPlay = true,
+  speed = 1,
+  loop = true,
+  loopDelay = 2000
 }: StrokeAnimationProps) {
   const writerRef = useRef<HTMLDivElement>(null);
   const hanziWriterRef = useRef<any>(null);
+  const loopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!writerRef.current || !character) return;
@@ -51,7 +56,7 @@ export default function StrokeAnimation({
             const paths = svg.querySelectorAll('path');
             paths.forEach(path => {
               const stroke = path.getAttribute('stroke');
-              
+
               // 只隐藏明确的灰色轮廓，保留所有其他元素
               if (stroke === '#DDD' || stroke === '#ddd' || stroke === '#ccc' || stroke === '#cccccc') {
                 path.style.opacity = '0';
@@ -61,14 +66,28 @@ export default function StrokeAnimation({
         }
       };
 
+      // 动画播放函数
+      const playAnimation = () => {
+        if (hanziWriterRef.current) {
+          hanziWriterRef.current.animateCharacter({
+            onComplete: () => {
+              // 动画完成后隐藏灰色轮廓
+              setTimeout(hideGrayOutlines, 100);
+
+              // 如果启用循环播放，设置下次播放
+              if (loop && autoPlay) {
+                loopTimeoutRef.current = setTimeout(() => {
+                  playAnimation();
+                }, loopDelay);
+              }
+            }
+          });
+        }
+      };
+
       // 如果设置了自动播放，开始动画
       if (autoPlay) {
-        writer.animateCharacter({
-          onComplete: () => {
-            // 动画完成后隐藏灰色轮廓
-            setTimeout(hideGrayOutlines, 100);
-          }
-        });
+        playAnimation();
       } else {
         // 如果不自动播放，也要隐藏灰色轮廓
         setTimeout(hideGrayOutlines, 500);
@@ -101,6 +120,13 @@ export default function StrokeAnimation({
 
     // 清理函数
     return () => {
+      // 清理循环定时器
+      if (loopTimeoutRef.current) {
+        clearTimeout(loopTimeoutRef.current);
+        loopTimeoutRef.current = null;
+      }
+
+      // 清理 HanziWriter
       if (hanziWriterRef.current) {
         try {
           hanziWriterRef.current.cancelAnimation();
@@ -110,7 +136,7 @@ export default function StrokeAnimation({
         hanziWriterRef.current = null;
       }
     };
-  }, [character, size, autoPlay, speed]);
+  }, [character, size, autoPlay, speed, loop, loopDelay]);
 
   return (
     <div className="hanzi-writer-container">
