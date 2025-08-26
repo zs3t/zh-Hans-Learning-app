@@ -177,3 +177,8 @@ pnpm-lock.yaml
 .npm/
 .yarn/
 .pnpm/
+
+# MD文档
+FIXES.MD
+SECURITY.md
+DEPENDENCIES.md
