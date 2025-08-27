@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import HanziWriter from "hanzi-writer"
 import { getPinyinForCharacter } from '../lib/pinyin'
-import { speakCharacterImmediate, isSpeechSupported, speakText } from '../lib/speechService'
+// import { speakCharacterImmediate, isSpeechSupported, speakText } from '../lib/speechService'
+import { speakCharacterImmediateWithHowler as speakCharacterImmediate, speakTextWithHowler as speakText } from '../lib/howlerSpeechService'
 import { getWordForReading } from '../lib/wordDatabase'
 import SimpleStrokeAnimation from '../components/SimpleStrokeAnimation'
 
