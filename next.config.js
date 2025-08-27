@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 跳过 Node.js 版本检查（用于兼容性）
-  experimental: {
-    skipNodeVersionCheck: true,
-  },
+  // 移除重复的 experimental 配置，合并到下面
 
   typescript: {
     // 在构建时忽略 TypeScript 错误
@@ -43,11 +40,7 @@ const nextConfig = {
     return config;
   },
 
-  // 实验性功能配置
-  experimental: {
-    // 确保在 Linux 环境下正确处理
-    esmExternals: 'loose',
-  },
+  // 移除实验性功能配置以避免影响 HanziWriter 库
 };
 
 module.exports = nextConfig;

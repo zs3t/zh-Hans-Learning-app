@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import HanziWriter from 'hanzi-writer';
 
 interface StrokeAnimationProps {
@@ -9,7 +9,6 @@ interface StrokeAnimationProps {
   autoPlay?: boolean;
   speed?: number;
   loop?: boolean;
-  loopDelay?: number;
 }
 
 export default function StrokeAnimation({
@@ -17,15 +16,70 @@ export default function StrokeAnimation({
   size = 240,
   autoPlay = true,
   speed = 1,
-  loop = true,
-  loopDelay = 2000
+  loop = true
 }: StrokeAnimationProps) {
   const writerRef = useRef<HTMLDivElement>(null);
   const hanziWriterRef = useRef<any>(null);
-  const loopTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const animationLoopRef = useRef<boolean>(false);
 
+  // 隐藏灰色轮廓的函数 - 使用 useCallback 确保稳定性
+  const hideGrayOutlines = useCallback(() => {
+    if (writerRef.current) {
+      const svg = writerRef.current.querySelector('svg');
+      if (svg) {
+        const paths = svg.querySelectorAll('path');
+        paths.forEach(path => {
+          const stroke = path.getAttribute('stroke');
+          if (stroke === '#DDD' || stroke === '#ddd' || stroke === '#ccc' || stroke === '#cccccc') {
+            path.style.opacity = '0';
+          }
+        });
+      }
+    }
+  }, []);
+
+  // 播放动画的函数 - 使用 useCallback 确保稳定性
+  const playAnimation = useCallback(() => {
+    if (!hanziWriterRef.current || !animationLoopRef.current) return;
+
+    console.log('🎬 开始播放笔画动画');
+
+    // 隐藏字符，重置到初始状态
+    hanziWriterRef.current.hideCharacter();
+
+    // 开始动画
+    hanziWriterRef.current.animateCharacter({
+      onComplete: () => {
+        console.log('✅ 笔画动画完成');
+
+        // 隐藏灰色轮廓
+        setTimeout(hideGrayOutlines, 100);
+
+        // 如果启用循环播放且循环标志仍然为 true
+        if (loop && autoPlay && hanziWriterRef.current && animationLoopRef.current) {
+          console.log('🔄 立即重新播放动画');
+          // 使用 setTimeout 0 确保在下一个事件循环中执行，避免堆栈溢出
+          setTimeout(() => {
+            if (animationLoopRef.current) {
+              playAnimation();
+            }
+          }, 0);
+        }
+      },
+      onError: (error: any) => {
+        console.error('❌ 笔画动画错误:', error);
+      }
+    });
+  }, [loop, autoPlay, hideGrayOutlines]);
+
+  // 初始化 HanziWriter
   useEffect(() => {
     if (!writerRef.current || !character) return;
+
+    console.log('🔧 初始化 HanziWriter，字符:', character);
+
+    // 停止之前的循环
+    animationLoopRef.current = false;
 
     // 清空容器
     writerRef.current.innerHTML = '';
@@ -38,65 +92,31 @@ export default function StrokeAnimation({
         padding: 20,
         strokeAnimationSpeed: speed,
         delayBetweenStrokes: 300 / speed,
-        showOutline: false, // 不显示灰色轮廓
-        showCharacter: false, // 不显示完整汉字
-        strokeColor: '#22c55e', // 绿色笔画
-        highlightColor: '#16a34a', // 深绿色高亮
+        showOutline: false,
+        showCharacter: false,
+        strokeColor: '#22c55e',
+        highlightColor: '#16a34a',
         radicalColor: '#22c55e',
-        drawingColor: '#22c55e' // 绘制颜色也设为绿色
+        drawingColor: '#22c55e'
       });
 
       hanziWriterRef.current = writer;
-
-      // 温和地隐藏灰色轮廓的函数
-      const hideGrayOutlines = () => {
-        if (writerRef.current) {
-          const svg = writerRef.current.querySelector('svg');
-          if (svg) {
-            const paths = svg.querySelectorAll('path');
-            paths.forEach(path => {
-              const stroke = path.getAttribute('stroke');
-
-              // 只隐藏明确的灰色轮廓，保留所有其他元素
-              if (stroke === '#DDD' || stroke === '#ddd' || stroke === '#ccc' || stroke === '#cccccc') {
-                path.style.opacity = '0';
-              }
-            });
-          }
-        }
-      };
-
-      // 动画播放函数
-      const playAnimation = () => {
-        if (hanziWriterRef.current) {
-          hanziWriterRef.current.animateCharacter({
-            onComplete: () => {
-              // 动画完成后隐藏灰色轮廓
-              setTimeout(hideGrayOutlines, 100);
-
-              // 如果启用循环播放，设置下次播放
-              if (loop && autoPlay) {
-                loopTimeoutRef.current = setTimeout(() => {
-                  playAnimation();
-                }, loopDelay);
-              }
-            }
-          });
-        }
-      };
+      console.log('✅ HanziWriter 创建成功');
 
       // 如果设置了自动播放，开始动画
       if (autoPlay) {
-        playAnimation();
+        console.log('🎬 启动自动播放，循环:', loop);
+        animationLoopRef.current = true;
+        setTimeout(() => {
+          playAnimation();
+        }, 300);
       } else {
-        // 如果不自动播放，也要隐藏灰色轮廓
         setTimeout(hideGrayOutlines, 500);
       }
 
     } catch (error) {
-      console.error('创建HanziWriter失败:', error);
-      
-      // 显示错误信息
+      console.error('❌ 创建HanziWriter失败:', error);
+
       if (writerRef.current) {
         writerRef.current.innerHTML = `
           <div style="
@@ -120,23 +140,43 @@ export default function StrokeAnimation({
 
     // 清理函数
     return () => {
-      // 清理循环定时器
-      if (loopTimeoutRef.current) {
-        clearTimeout(loopTimeoutRef.current);
-        loopTimeoutRef.current = null;
-      }
+      console.log('🧹 清理 StrokeAnimation 组件');
 
-      // 清理 HanziWriter
+      // 停止循环
+      animationLoopRef.current = false;
+
       if (hanziWriterRef.current) {
         try {
           hanziWriterRef.current.cancelAnimation();
         } catch (e) {
-          // 忽略清理错误
+          console.log('清理时忽略错误:', e);
         }
         hanziWriterRef.current = null;
       }
     };
-  }, [character, size, autoPlay, speed, loop, loopDelay]);
+  }, [character, size, speed]);
+
+  // 监听 autoPlay 和 loop 变化
+  useEffect(() => {
+    if (hanziWriterRef.current) {
+      if (autoPlay && !animationLoopRef.current) {
+        console.log('🔄 autoPlay 启用，开始循环播放');
+        animationLoopRef.current = true;
+        setTimeout(() => {
+          playAnimation();
+        }, 100);
+      } else if (!autoPlay && animationLoopRef.current) {
+        console.log('🛑 autoPlay 禁用，停止循环播放');
+        animationLoopRef.current = false;
+        // 取消当前动画
+        try {
+          hanziWriterRef.current.cancelAnimation();
+        } catch (e) {
+          console.log('取消动画时忽略错误:', e);
+        }
+      }
+    }
+  }, [autoPlay, loop, playAnimation]);
 
   return (
     <div className="hanzi-writer-container">

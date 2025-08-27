@@ -70,7 +70,8 @@ export default function LearnPage() {
     const character = characterSet.characters[randomIndex];
 
     setCurrentCharacter(character);
-    setShowStrokes(false);
+    // 不要重置 showStrokes，保持笔画显示状态
+    // setShowStrokes(false);
     // 自动获取并显示拼音
     loadPinyin(character.char);
   };
@@ -185,53 +186,55 @@ export default function LearnPage() {
               </div>
             </div>
 
-            {/* 笔画顺序展开区域 */}
-            {showStrokes && (
-              <div className="bg-muted/50 rounded-lg p-6 space-y-4">
-                <div className="flex items-center justify-center">
-                  <h3 className="text-lg font-serif font-semibold text-foreground">笔画顺序</h3>
-                </div>
+            {/* 笔画顺序展开区域 - 使用 visibility 而不是条件渲染 */}
+            <div
+              className={`bg-muted/50 rounded-lg p-6 space-y-4 transition-all duration-300 ${
+                showStrokes ? 'opacity-100 max-h-96' : 'opacity-0 max-h-0 overflow-hidden p-0'
+              }`}
+            >
+              <div className="flex items-center justify-center">
+                <h3 className="text-lg font-serif font-semibold text-foreground">笔画顺序</h3>
+              </div>
 
-                <div className="flex justify-center">
-                  <div className="relative">
-                    <svg
-                      width="240"
-                      height="240"
-                      viewBox="0 0 100 100"
-                      className="border-2 border-emerald-300 rounded-lg bg-background shadow-sm"
-                    >
-                      {/* 田字格辅助线 */}
-                      <defs>
-                        <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                          <path
-                            d="M 50 0 L 0 0 0 50"
-                            fill="none"
-                            stroke="#e5e7eb"
-                            strokeWidth="0.3"
-                            strokeDasharray="1,1"
-                          />
-                        </pattern>
-                      </defs>
-                      <rect width="100" height="100" fill="url(#grid)" />
-                      <line x1="50" y1="0" x2="50" y2="100" stroke="#e5e7eb" strokeWidth="0.3" strokeDasharray="1,1" />
-                      <line x1="0" y1="50" x2="100" y2="50" stroke="#e5e7eb" strokeWidth="0.3" strokeDasharray="1,1" />
-                    </svg>
-                    
-                    {/* 笔画动画覆盖在田字格上 */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <StrokeAnimation
-                        character={currentCharacter.char}
-                        size={200}
-                        autoPlay={true}
-                        speed={1}
-                        loop={true}
-                        loopDelay={3000}
-                      />
-                    </div>
+              <div className="flex justify-center">
+                <div className="relative">
+                  <svg
+                    width="240"
+                    height="240"
+                    viewBox="0 0 100 100"
+                    className="border-2 border-emerald-300 rounded-lg bg-background shadow-sm"
+                  >
+                    {/* 田字格辅助线 */}
+                    <defs>
+                      <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                        <path
+                          d="M 50 0 L 0 0 0 50"
+                          fill="none"
+                          stroke="#e5e7eb"
+                          strokeWidth="0.3"
+                          strokeDasharray="1,1"
+                        />
+                      </pattern>
+                    </defs>
+                    <rect width="100" height="100" fill="url(#grid)" />
+                    <line x1="50" y1="0" x2="50" y2="100" stroke="#e5e7eb" strokeWidth="0.3" strokeDasharray="1,1" />
+                    <line x1="0" y1="50" x2="100" y2="50" stroke="#e5e7eb" strokeWidth="0.3" strokeDasharray="1,1" />
+                  </svg>
+
+                  {/* 笔画动画覆盖在田字格上 - 始终存在，只控制可见性 */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <StrokeAnimation
+                      key={currentCharacter.char} // 添加 key 确保字符变化时重新创建组件
+                      character={currentCharacter.char}
+                      size={200}
+                      autoPlay={showStrokes} // 只有显示时才自动播放
+                      speed={1}
+                      loop={true}
+                    />
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </Card>
 

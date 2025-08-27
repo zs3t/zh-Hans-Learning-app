@@ -8,18 +8,28 @@ import { speakCharacterImmediate, isSpeechSupported, speakText } from '../lib/sp
 import { getWordForReading } from '../lib/wordDatabase'
 import SimpleStrokeAnimation from '../components/SimpleStrokeAnimation'
 
-// 临时内联StrokeAnimation组件
-function StrokeAnimation({ character, size = 240, autoPlay = true, speed = 1 }: {
+// 临时内联StrokeAnimation组件 - 添加循环播放功能
+function StrokeAnimation({ character, size = 240, autoPlay = true, speed = 1, loop = true }: {
   character: string;
   size?: number;
   autoPlay?: boolean;
   speed?: number;
+  loop?: boolean;
 }) {
   const writerRef = useRef<HTMLDivElement>(null);
   const hanziWriterRef = useRef<any>(null);
+  const animationLoopRef = useRef<boolean>(false);
 
   useEffect(() => {
-    if (!writerRef.current || !character) return;
+    if (!writerRef.current || !character) {
+      console.log('❌ 主页面 StrokeAnimation 缺少必要条件:', {
+        hasContainer: !!writerRef.current,
+        character
+      });
+      return;
+    }
+
+    console.log('🔧 主页面初始化 HanziWriter，字符:', character);
 
     // 清空容器
     writerRef.current.innerHTML = '';
@@ -30,14 +40,17 @@ function StrokeAnimation({ character, size = 240, autoPlay = true, speed = 1 }: 
         width: size,
         height: size,
         padding: 20,
-        strokeAnimationSpeed: speed,
-        delayBetweenStrokes: 300 / speed,
-        showOutline: false, // 不显示灰色轮廓
-        showCharacter: false, // 不显示完整汉字
+        strokeAnimationSpeed: 1, // 每笔画的动画速度
+        delayBetweenStrokes: 500, // 笔画间0.5秒延迟
+        showOutline: true, // 显示灰色轮廓作为参考
+        showCharacter: false, // 不显示完整汉字，只显示动画
         strokeColor: '#22c55e', // 绿色笔画
         highlightColor: '#16a34a', // 深绿色高亮
         radicalColor: '#22c55e',
-        drawingColor: '#22c55e' // 绘制颜色也设为绿色
+        drawingColor: '#22c55e', // 绘制颜色也设为绿色
+        outlineColor: '#DDD', // 灰色轮廓颜色
+        strokeWidth: 6, // 更粗的笔画宽度
+        outlineWidth: 2 // 轮廓宽度
       });
 
       hanziWriterRef.current = writer;
@@ -60,17 +73,74 @@ function StrokeAnimation({ character, size = 240, autoPlay = true, speed = 1 }: 
         }
       };
 
+      // 播放动画的函数 - 支持循环播放
+      const playAnimation = () => {
+        if (!hanziWriterRef.current || !animationLoopRef.current) return;
+
+        console.log('🎬 主页面开始播放笔画动画，字符:', character);
+
+        // 重置字符状态，准备动画
+        hanziWriterRef.current.hideCharacter();
+
+        // 等待重置完成，然后开始动画
+        setTimeout(() => {
+          if (!hanziWriterRef.current || !animationLoopRef.current) return;
+
+          console.log('▶️ 主页面开始动画播放');
+
+          // 开始动画
+          hanziWriterRef.current.animateCharacter({
+            onComplete: () => {
+              console.log('✅ 主页面笔画动画完成');
+              console.log('📊 动画统计 - 速度:', 0.05, '笔画间延迟:', 3000, 'ms');
+
+              // 如果启用循环播放且循环标志仍然为 true
+              if (loop && autoPlay && hanziWriterRef.current && animationLoopRef.current) {
+                console.log('🔄 主页面准备重新播放动画');
+                // 等待更长时间再重新播放，让用户看到完整效果
+                const timeoutId = setTimeout(() => {
+                  if (animationLoopRef.current && hanziWriterRef.current) {
+                    console.log('🔄 开始下一轮动画');
+                    playAnimation();
+                  } else {
+                    console.log('❌ 循环被中断，组件已卸载');
+                  }
+                }, 5000); // 5秒后重新播放，让用户充分看到完整字符
+
+                // 保存 timeout ID 以便清理
+                hanziWriterRef.current._loopTimeoutId = timeoutId;
+              }
+            },
+            onError: (error: any) => {
+              console.error('❌ 主页面笔画动画错误:', error);
+            }
+          });
+        }, 200); // 等待重置完成
+      };
+
       // 如果设置了自动播放，开始动画
       if (autoPlay) {
-        writer.animateCharacter({
-          onComplete: () => {
-            // 动画完成后隐藏灰色轮廓
-            setTimeout(hideGrayOutlines, 100);
+        console.log('🎬 主页面启动自动播放，循环:', loop);
+        animationLoopRef.current = true;
+
+        // 先显示轮廓，确保字符可见
+        setTimeout(() => {
+          console.log('📝 主页面显示字符轮廓');
+          if (hanziWriterRef.current) {
+            hanziWriterRef.current.showCharacter();
+            setTimeout(() => {
+              playAnimation();
+            }, 500);
           }
-        });
+        }, 300);
       } else {
-        // 如果不自动播放，也要隐藏灰色轮廓
-        setTimeout(hideGrayOutlines, 500);
+        // 如果不自动播放，至少显示字符轮廓
+        setTimeout(() => {
+          if (hanziWriterRef.current) {
+            hanziWriterRef.current.showCharacter();
+          }
+          hideGrayOutlines();
+        }, 500);
       }
 
     } catch (error) {
@@ -79,16 +149,31 @@ function StrokeAnimation({ character, size = 240, autoPlay = true, speed = 1 }: 
 
     // 清理函数
     return () => {
+      console.log('🧹 主页面清理 StrokeAnimation 组件');
+
+      // 停止循环
+      animationLoopRef.current = false;
+
       if (hanziWriterRef.current) {
+        // 清理循环定时器
+        if (hanziWriterRef.current._loopTimeoutId) {
+          clearTimeout(hanziWriterRef.current._loopTimeoutId);
+          hanziWriterRef.current._loopTimeoutId = null;
+        }
+
         try {
-          hanziWriterRef.current.cancelAnimation();
+          if (typeof hanziWriterRef.current.cancelAnimation === 'function') {
+            hanziWriterRef.current.cancelAnimation();
+          } else if (typeof hanziWriterRef.current.pauseAnimation === 'function') {
+            hanziWriterRef.current.pauseAnimation();
+          }
         } catch (e) {
-          // 忽略清理错误
+          console.log('主页面清理时忽略错误:', e);
         }
         hanziWriterRef.current = null;
       }
     };
-  }, [character, size, autoPlay, speed]);
+  }, [character]); // 只在字符变化时重新初始化
 
   return (
     <div className="hanzi-writer-container">
@@ -127,7 +212,7 @@ const characterSets: CharacterSet[] = []
 export default function ChineseCharacterLearning() {
   const router = useRouter()
   const [currentCharacter, setCurrentCharacter] = useState<Character | null>(null)
-  const [showStrokes, setShowStrokes] = useState(false)
+  const [showStrokes, setShowStrokes] = useState(false) // 默认隐藏笔画动画
   const [currentCharacterSet, setCurrentCharacterSet] = useState<CharacterSet | null>(null)
   const [showCharacterSetSelector, setShowCharacterSetSelector] = useState(false)
   const [showImportForm, setShowImportForm] = useState(false)
@@ -344,7 +429,7 @@ export default function ChineseCharacterLearning() {
     const randomIndex = Math.floor(Math.random() * characterSet.characters.length)
     const newCharacter = characterSet.characters[randomIndex]
     setCurrentCharacter(newCharacter)
-    setShowStrokes(false)
+    setShowStrokes(false) // 换字时收起笔画动画
 
 
   }
@@ -355,7 +440,7 @@ export default function ChineseCharacterLearning() {
     const randomIndex = Math.floor(Math.random() * currentCharacterSet.characters.length)
     const newCharacter = currentCharacterSet.characters[randomIndex]
     setCurrentCharacter(newCharacter)
-    setShowStrokes(false)
+    setShowStrokes(false) // 换字时收起笔画动画
 
 
   }
@@ -811,10 +896,12 @@ export default function ChineseCharacterLearning() {
                       boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)'
                     }}>
                       <StrokeAnimation
+                        key={currentCharacter.char} // 添加 key 确保字符变化时重新创建组件
                         character={currentCharacter.char}
                         size={240}
                         autoPlay={true}
                         speed={1}
+                        loop={true}
                       />
                     </div>
                   </div>
