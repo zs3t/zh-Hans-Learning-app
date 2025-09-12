@@ -1,14 +1,14 @@
 # 📖 中文汉字学习应用
 
 [![Next.js](https://img.shields.io/badge/Next.js-14.2.32-000000?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-latest-(v5+)-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-latest--%28v5%2B%29-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-v22.16.0-339933?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 [![SQLite](https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite)](https://www.sqlite.org/index.html)
 [![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma)](https://www.prisma.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-一个基于现代化 **Next.js** 框架构建的交互式中文汉字学习应用。本项目通过集成 **Prisma ORM** 进行数据持久化，存储汉字学习进度和自定义字库。语音功能通过 **本地服务器** 动态提供 `.m4a` 音频文件，确保稳定、快速的汉字发音。应用集成了笔画动画演示、多音字语音播放、灵活的字库管理等核心功能，并通过响应式设计确保在不同设备上都能流畅使用。
+一个基于现代化 **Next.js** 框架构建的交互式中文汉字学习应用。本项目通过集成 **Prisma ORM** 进行数据持久化，存储汉字的自定义字库。语音功能通过 **本地服务器** 动态提供 `.m4a` 音频文件，确保稳定、快速的汉字发音。应用集成了笔画动画演示、多音字语音播放、灵活的字库管理等核心功能，并通过响应式设计确保在不同设备上都能流畅使用。
 
 ## ✨ 功能特性
 
