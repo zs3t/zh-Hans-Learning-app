@@ -27,12 +27,12 @@
 ```bash
 # 在服务器上执行，例如在你的用户主目录
 # 首次部署:
-# git clone git@github.com:zs3t/zh-hans-learning-app.git
-# cd zh-hans-learning-app
-# bash scripts/deploy.sh
+git clone git@github.com:zs3t/zh-Hans-Learning-app.git
+cd zh-Hans-Learning-app
+bash scripts/deploy.sh
 
 # 后续更新:
-cd zh-hans-learning-app # 进入项目路径
+cd zh-Hans-Learning-app # 进入项目路径
 bash scripts/deploy.sh
 ```
 
@@ -42,8 +42,8 @@ bash scripts/deploy.sh
 
 ```bash
 # 克隆仓库
-git clone https://github.com/zs3t/zh-hans-learning-app.git
-cd zh-hans-learning-app
+git clone https://github.com/zs3t/zh-Hans-Learning-app.git
+cd zh-Hans-Learning-app
 
 # 创建 .env 文件 (示例，可复制 .env.example)
 cp .env.example .env.production
@@ -93,20 +93,20 @@ npm start
 # 全局安装 PM2 (如果尚未安装)
 npm install -g pm2
 
-# 使用预设脚本启动应用 (名称为 zh-hans-learning-app)
-pm2 start npm --name "zh-hans-learning-app" -- start
+# 使用预设脚本启动应用 (名称为 zh-Hans-Learning-app)
+pm2 start npm --name "zh-Hans-Learning-app" -- start
 
 # 查看所有 PM2 管理的进程状态
 pm2 status
 
 # 查看应用的实时日志
-pm2 logs zh-hans-learning-app
+pm2 logs zh-Hans-Learning-app
 
 # 重启应用
-pm2 restart zh-hans-learning-app
+pm2 restart zh-Hans-Learning-app
 
 # 停止应用
-pm2 stop zh-hans-learning-app
+pm2 stop zh-Hans-Learning-app
 ```
 
 ### PM2 配置与自启动

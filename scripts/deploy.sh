@@ -6,16 +6,16 @@
 #   1. 首次部署: 在服务器上任意位置执行此脚本。它会克隆仓库并设置项目。
 #      例如: bash /path/to/your/repo/scripts/deploy.sh
 #   2. 后续更新: 在项目根目录内执行 'bash scripts/deploy.sh' 或直接在 /scripts 目录执行。
-#      例如: cd /home/your-user/zh-hans-learning-app && bash scripts/deploy.sh
+#      例如: cd zh-Hans-Learning-app && bash scripts/deploy.sh
 # ==============================================================================
 
 # -- 配置 (请根据你的服务器环境修改) --
-APP_NAME="zh-hans-learning-app"
-GIT_REPO_URL="git@github.com:zs3t/zh-hans-learning-app.git" # 你的 Git 仓库地址 (建议使用 SSH 地址)
-# DEST_BASE_DIR: 项目将被部署到的父目录。例如，项目将在 /var/www/zh-hans-learning-app
-# 或者 /home/deploy-user/zh-hans-learning-app。
+APP_NAME="zh-Hans-Learning-app"
+GIT_REPO_URL="git@github.com:zs3t/zh-Hans-Learning-app.git" # 你的 Git 仓库地址 (建议使用 SSH 地址)
+# DEST_BASE_DIR: 项目将被部署到的父目录。例如，项目将在 /var/www/zh-Hans-Learning-app
+# 或者 /home/deploy-user/zh-Hans-Learning-app。
 # 这样每个用户或环境可以自定义这个基础目录。
-DEST_BASE_DIR="/home/$(whoami)" # 默认将项目部署到当前用户的主目录
+DEST_BASE_DIR="/$(whoami)" # 默认将项目部署到当前用户的主目录
 
 # PROJECT_DIR 将会被脚本动态确定，它会是 $DEST_BASE_DIR/$APP_NAME
 
