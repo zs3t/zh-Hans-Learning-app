@@ -1,0 +1,30 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model CharacterSet {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  description String?
+  isDefault Boolean    @default(false) // <-- 确保有这个字段
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  characters  Character[]
+}
+
+model Character {
+  id             String       @id @default(uuid())
+  char           String       // <-- 从这里移除 @unique
+  pinyin         String       @default("")
+  characterSet   CharacterSet @relation(fields: [characterSetId], references: [id], onDelete: Cascade)
+  characterSetId String
+  createdAt      DateTime     @default(now())
+  @@unique([char, characterSetId]) // <-- 添加这一行复合唯一键
+}
