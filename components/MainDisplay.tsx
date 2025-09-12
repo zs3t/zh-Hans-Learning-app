@@ -1,7 +1,7 @@
 // components/MainDisplay.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { StrokeAnimation } from './StrokeAnimation';
 import { AudioPlayer } from './AudioPlayer';
@@ -9,7 +9,7 @@ import { wordService } from '../lib/client/wordService';
 import { getPinyinForCharacter } from '../lib/pinyin';
 import { CharacterSet, Character, SimpleCharacterSet } from '../lib/types';
 import { Button } from './ui/button';
-import { Eye, ChevronsRight, BookCopy, Trash2, Plus, Settings2 } from 'lucide-react';
+import { Eye, ChevronsRight, BookCopy, Trash2, Plus, Settings2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 
 interface MainDisplayProps {
@@ -18,7 +18,6 @@ interface MainDisplayProps {
   onAddNewSet: () => void;
 }
 
-// 辅助函数：计算 HanziWriter 的响应式尺寸
 const getResponsiveHanziWriterContentSize = () => {
   const minContentSize = 150;
   const maxContentSize = 580;
@@ -31,13 +30,11 @@ const getResponsiveHanziWriterContentSize = () => {
   return Math.max(minContentSize, Math.min(calculatedSize, maxContentSize));
 };
 
-// 【新增】辅助函数：用于打乱数组顺序 (Fisher-Yates 算法)
-// 我们将用它来创建每一轮的“牌堆”
 const shuffleCharacters = (characters: Character[]): Character[] => {
-  const array = [...characters]; // 创建副本以避免修改原始数组
+  const array = [...characters];
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]]; // ES6 解构赋值交换元素
+    [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
 };
@@ -48,14 +45,16 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
   const [currentCharacterSet, setCurrentCharacterSet] = useState<CharacterSet | null>(null);
   const [currentCharacter, setCurrentCharacter] = useState<Character | null>(null);
   
-  // 【新增】状态：用于存放当前这一轮尚未出现的字（我们的“牌堆”）
   const [shuffledDeck, setShuffledDeck] = useState<Character[]>([]);
 
   const [pinyinCurrentChar, setPinyinCurrentChar] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMainDisplay, setIsLoadingMainDisplay] = useState(true);
+  const [isPinyinLoading, setIsPinyinLoading] = useState(false);
   const [showManager, setShowManager] = useState(false);
   const [showStrokes, setShowStrokes] = useState(false);
   const [hanziWriterResponsiveContentSize, setHanziWriterResponsiveContentSize] = useState(getResponsiveHanziWriterContentSize());
+
+  const pinyinRequestToken = useRef(0);
 
   const loadAllSetMetadata = useCallback(async () => {
     try {
@@ -65,93 +64,141 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
       console.error("Failed to load set list for manager", err);
       toast.error("加载字库列表失败");
     }
-  }, []);
+  }, []); // 依赖项依然为空，因为内部只使用了 setState
 
-  // 【修改】核心逻辑：切换字库时，直接生成第一轮的“牌堆”
-  const switchCharacterSet = useCallback(async (setId: string, isInitialLoad = false) => {
-    if (!isInitialLoad) {
-      setIsLoading(true);
-    }
+  // 【核心修改】switchCharacterSet 依赖项优化 + 加入 setId 检查
+  const switchCharacterSet = useCallback(async (setId: string) => {
     setShowManager(false);
+    
+    if (!setId) { // 如果传入的 setId 为空或无效，则直接清空相关状态
+      console.warn("switchCharacterSet called with null or undefined setId. Clearing current character states.");
+      setCurrentCharacterSet(null);
+      setCurrentCharacter(null);
+      setShuffledDeck([]);
+      setPinyinCurrentChar([]);
+      setIsPinyinLoading(false); // 确保加载状态也停止
+      return; // 提前返回，不再尝试 fetch
+    }
+
     try {
       const set = await wordService.getCharacterSetById(setId);
       if (set) {
         setCurrentCharacterSet(set);
         if (set.characters.length > 0) {
-          // 1. 打乱整个字库的顺序
           const newShuffledDeck = shuffleCharacters(set.characters);
-          // 2. 从打乱后的牌堆中取出第一个字作为当前字
           setCurrentCharacter(newShuffledDeck[0]);
-          // 3. 将剩余的字存入牌堆状态中，用于后续的“下一个”
           setShuffledDeck(newShuffledDeck.slice(1));
         } else {
-          // 如果字库为空，清空所有相关状态
-          setCurrentCharacter(null);
+          setCurrentCharacter(null); // 字库为空，清空当前字符
           setShuffledDeck([]);
+          setPinyinCurrentChar([]); // 字库为空时也清空拼音
+          setIsPinyinLoading(false); // 字库为空时，拼音加载完成（或无拼音可加载）
         }
       } else {
-         throw new Error("Character set not found.");
+         // 虽然 getCharacterSetById 内部会处理 404 返回 null，但这里的逻辑是为确保状态。
+         // ถ้า API return null ก็ถือว่าไม่เจอ
+         throw new Error("Character set not found or could not be loaded.");
       }
     } catch (error) {
         toast.error('切换字库失败。');
         console.error(error);
-    } finally {
-        setIsLoading(false);
-    }
-  }, []);
+        setCurrentCharacterSet(null);
+        setCurrentCharacter(null);
+        setPinyinCurrentChar([]);
+        setIsPinyinLoading(false);
+    } 
+  }, []); // 【核心修改】移除所有 setState 作为依赖项。这些是稳定的引用，不需要作为 useCallback 依赖。
 
+  // 【核心修改】初始加载的 useEffect 逻辑
   useEffect(() => {
-    setIsLoading(true);
-    switchCharacterSet(initialSetId, true);
-    loadAllSetMetadata();
+    // 每次 initialSetId 变化（或组件挂载），都将加载状态设置为 true
+    // 这是确保加载指示器会显示的关键点
+    setIsLoadingMainDisplay(true); 
+
+    const loadInitialData = async () => {
+      try {
+        // 等待 switchCharacterSet 完成，这会设置 currentCharacterSet 和 currentCharacter
+        await switchCharacterSet(initialSetId); 
+        // 等待所有字库元数据加载完成
+        await loadAllSetMetadata();             
+      } catch (error) {
+        console.error("Initial data loading failed:", error);
+        toast.error("初始化数据加载失败。");
+      } finally {
+        // 无论成功失败，确保 MainDisplay 的加载状态最终被设置为 false
+        setIsLoadingMainDisplay(false); 
+      }
+    };
+
+    // 【新增重要检查】只有当 initialSetId 存在时才尝试加载数据
+    // 如果 initialSetId 为 null (例如，app/page.tsx 中没有找到任何字库)，
+    // 那么 MainDisplay 也没有有效的数据去加载，应该直接解除加载状态
+    if (initialSetId) { 
+      loadInitialData();
+    } else {
+      console.warn("MainDisplay received null initialSetId. Skipping data loading and setting isLoading to false.");
+      // 如果没有有效的 initialSetId，立即解除 MainDisplay 的加载状态
+      // 此时 app/page.tsx 应该会显示 WelcomeScreen
+      setIsLoadingMainDisplay(false);
+    }
+    // 依赖项：initialSetId 确保在 ID 变化时重新运行；
+    // switchCharacterSet 和 loadAllSetMetadata 是使用 useCallback 创建的稳定函数，
+    // 它们本身的引用不会因为组件 render 而改变，因此作为依赖是合适的。
   }, [initialSetId, switchCharacterSet, loadAllSetMetadata]);
 
+  // 处理拼音获取的 useEffect - 监听 currentCharacter 并启动加载
+  // 此处的逻辑已经优化过，保持不变
   useEffect(() => {
-    if (currentCharacter?.char) {
-      getPinyinForCharacter(currentCharacter.char).then(pinyinResults => {
-        setPinyinCurrentChar(pinyinResults);
-      }).catch(error => {
-        console.error('Error fetching pinyin:', error);
-        setPinyinCurrentChar([]);
-      });
-    } else {
+    const currentToken = ++pinyinRequestToken.current; 
+    
+    if (!currentCharacter?.char) {
       setPinyinCurrentChar([]);
+      setIsPinyinLoading(false);
+      return; 
     }
-    setShowStrokes(false);
-  }, [currentCharacter]);
-  
-  // 【修改】核心逻辑：点击“下一个字”的全新实现
+
+    setIsPinyinLoading(true); 
+    
+    getPinyinForCharacter(currentCharacter.char).then(pinyinResults => {
+      if (currentToken === pinyinRequestToken.current) { 
+        setPinyinCurrentChar(pinyinResults);
+        setIsPinyinLoading(false); 
+      }
+    }).catch(error => {
+      console.error('Error fetching pinyin:', error);
+      if (currentToken === pinyinRequestToken.current) { 
+        setPinyinCurrentChar([]); 
+        setIsPinyinLoading(false); 
+      }
+    });
+
+    setShowStrokes(false); 
+  }, [currentCharacter]); 
+
+  // showNextCharacter 依赖项优化
   const showNextCharacter = useCallback(() => {
-    // 保护条件：字库不存在或只有一个字，无法切换
     if (!currentCharacterSet || currentCharacterSet.characters.length < 2) {
         toast.error('字库中没有足够的字来切换。');
         return;
     }
 
-    // 情况1：当前牌堆中还有剩余的字
     if (shuffledDeck.length > 0) {
-      const nextChar = shuffledDeck[0];      // 从牌堆顶部取出一个字
-      setCurrentCharacter(nextChar);         // 设置为当前字
-      setShuffledDeck(shuffledDeck.slice(1));  // 更新牌堆（移除已取出的字）
+      const nextChar = shuffledDeck[0];
+      setCurrentCharacter(nextChar); 
+      setShuffledDeck(shuffledDeck.slice(1));
     } else {
-      // 情况2：牌堆已空，说明一轮结束，开始新一轮
       toast.success('新一轮开始！');
       
-      // 重新打乱完整的字库
       let newShuffledDeck = shuffleCharacters(currentCharacterSet.characters);
 
-      //  为了防止新一轮的第一个字和上一轮的最后一个字重复，做一个简单的检查和交换
       if (newShuffledDeck[0].id === currentCharacter?.id) {
-        // 和第二位交换位置（因为我们已经检查过字数大于1，所以 newShuffledDeck[1] 必定存在）
         [newShuffledDeck[0], newShuffledDeck[1]] = [newShuffledDeck[1], newShuffledDeck[0]];
       }
-
-      // 像初始化时一样，设置新一轮的当前字和牌堆
-      setCurrentCharacter(newShuffledDeck[0]);
+      setCurrentCharacter(newShuffledDeck[0]); 
       setShuffledDeck(newShuffledDeck.slice(1));
     }
-  }, [currentCharacterSet, shuffledDeck, currentCharacter]); // 依赖项更新
-  
+  }, [currentCharacterSet, shuffledDeck, currentCharacter, setCurrentCharacter, setShuffledDeck]); // 依赖项仍然是 setState 和其他状态
+
   const handleDeleteSet = useCallback(async (setId: string) => {
     if (!confirm('确定要删除这个字库吗？此操作不可撤销。')) return;
     
@@ -173,7 +220,8 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
     return () => window.removeEventListener('resize', updateSize);
   }, []);
 
-  if (isLoading) {
+
+  if (isLoadingMainDisplay) {
        return <div className="text-2xl font-bold text-gray-700 animate-pulse">正在加载字库...</div>;
   }
   
@@ -195,7 +243,7 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
             }}
           >
             <StrokeAnimation 
-              key={currentCharacter.char + '-fullscreen'} 
+              key={currentCharacter.char + '-fullscreen-' + hanziWriterResponsiveContentSize}
               character={currentCharacter.char} 
               size={hanziWriterResponsiveContentSize}
             />
@@ -210,8 +258,7 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
               <Button onClick={() => setShowStrokes(!showStrokes)} variant={showStrokes ? 'default' : 'outline'}>
                 <Eye className="mr-2 h-4 w-4" /> {showStrokes ? "隐藏笔画" : "显示笔画"}
               </Button>
-              {/* 【修改】当字库只有一个字时，禁用“下一个字”按钮 */}
-              <Button onClick={showNextCharacter} disabled={!currentCharacterSet || currentCharacterSet.characters.length < 2}>
+              <Button onClick={showNextCharacter} disabled={!currentCharacterSet || currentCharacterSet.characters.length < 2 || isPinyinLoading}>
                 下一个字 <ChevronsRight className="ml-2 h-4 w-4" />
               </Button>
             </>
@@ -276,13 +323,33 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
           <Card className="bg-green-50/50 border-green-200">
             <CardContent className="pt-6">
               <div className="text-center flex flex-col items-center gap-4">
-                <div className="flex flex-wrap justify-center gap-3">
+                <div 
+                  className="flex flex-wrap justify-center gap-3 relative min-h-[40px] max-w-full w-full"
+                  style={{ width: 'fit-content', minWidth: '150px' }} 
+                >
                   {pinyinCurrentChar.map((pinyin, index) => (
-                    <div key={index} className="flex items-center gap-2 bg-lime-100/70 rounded-lg px-3 py-1">
+                    <div 
+                      key={index} 
+                      className="flex items-center gap-2 bg-lime-100/70 rounded-lg px-3 py-1 transition-opacity duration-200"
+                      style={{ opacity: isPinyinLoading ? 0.5 : 1 }} 
+                    >
                       <span className="text-2xl font-medium text-lime-700">{pinyin}</span>
                       <AudioPlayer pinyin={pinyin} />
                     </div>
                   ))}
+
+                  {isPinyinLoading && (
+                    <div 
+                      className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center rounded-lg transition-opacity duration-200"
+                    >
+                       <Loader2 className="h-6 w-6 animate-spin text-lime-700" />
+                    </div>
+                  )}
+
+                  {isPinyinLoading && pinyinCurrentChar.length === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center text-xl font-medium text-lime-700">加载拼音中...</div>
+                  )}
+
                 </div>
 
                 <div className="text-9xl font-serif text-gray-800 my-4">
