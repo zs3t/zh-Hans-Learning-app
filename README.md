@@ -27,7 +27,7 @@
 ```bash
 # 在服务器上执行，例如在你的用户主目录
 # 首次部署:
-git clone git@github.com:zs3t/zh-Hans-Learning-app.git
+git clone https://github.com/zs3t/zh-Hans-Learning-app.git
 cd zh-Hans-Learning-app
 bash scripts/deploy.sh
 
