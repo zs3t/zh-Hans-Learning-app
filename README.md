@@ -51,6 +51,11 @@ cp .env.example .env.production
 # 安装依赖 (推荐使用 npm ci，确保精确版本和一致性)
 npm ci
 
+# 加载 .env.production 文件
+set -a
+source .env.production
+set +a
+
 # 应用 Prisma 数据库迁移
 npx prisma migrate deploy
 
