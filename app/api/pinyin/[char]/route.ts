@@ -6,8 +6,9 @@ export async function GET(
   request: Request,
   { params }: { params: { char: string } }
 ) {
+  const { char } = await params; // <-- 已修改：在函数开头 await params
   try {
-    const character = decodeURIComponent(params.char);
+    const character = decodeURIComponent(char);
 
     if (!character || character.length !== 1) {
       return NextResponse.json(
@@ -21,7 +22,7 @@ export async function GET(
     return NextResponse.json(pinyinResult);
     
   } catch (error) {
-    console.error(`获取拼音API出错 for char: ${params.char}`, error);
+    console.error(`获取拼音API出错 for char: ${char}`, error); // <-- 现在可以安全使用 char
     return NextResponse.json(
       { error: '服务器内部错误' },
       { status: 500 }

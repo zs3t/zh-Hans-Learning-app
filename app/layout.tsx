@@ -1,12 +1,12 @@
 // app/layout.tsx
 
 import './globals.css';
+import '../styles/hanzi-writer.css'; // 核心修复：加载 HanziWriter 的样式
 import localFont from "next/font/local";
 import { cn } from "@/lib/utils";
 import AudioUnlocker from '../components/AudioUnlocker';
 import { Toaster } from 'react-hot-toast';
 
-// We are making sure it points to the correct 'opsz' filename
 const fontSans = localFont({
   src: './fonts/Inter-VariableFont_opsz,wght.ttf', 
   variable: "--font-sans",
@@ -23,8 +23,15 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // 暗色模式开关，可以后续动态替换为 state 或 next-themes
+  const isDarkMode = false;
+
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
+    <html
+      lang="zh-CN"
+      className={isDarkMode ? "dark" : ""}
+      suppressHydrationWarning
+    >
       <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased",
@@ -32,8 +39,7 @@ export default function RootLayout({
         )}
       >
         <AudioUnlocker />
-        {/* 将 Toaster 放在 children 前面，确保它在顶层 */}
-        <Toaster position="top-center" />  {/* <-- 修改这里 */}
+        <Toaster position="top-center" />
         {children}
       </body>
     </html>

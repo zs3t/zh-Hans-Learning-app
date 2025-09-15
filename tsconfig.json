@@ -1,17 +1,17 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "target": "ESNext",                    // 使用 ESNext，支持现代语法
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "allowJs": true,
-    "skipLibCheck": true,
+    "skipLibCheck": true,                  // 跳过类型检查第三方库
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "incremental": true,
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "NodeNext",                  // 改成 NodeNext，兼容 ESM 模块
+    "moduleResolution": "NodeNext",       // NodeNext 模块解析
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
@@ -24,8 +24,7 @@
     "paths": {
       "@/*": ["./*"]
     },
-    // 确保 typeRoots 包含了你的自定义类型目录
-    "typeRoots": ["./node_modules/@types", "./types"] 
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
   "include": [
     "next-env.d.ts",
@@ -33,7 +32,7 @@
     "**/*.tsx",
     "**/*.js",
     "**/*.jsx",
-    "types/**/*.d.ts", // 确保包含你的自定义类型文件
+    "types/**/*.d.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": ["node_modules"]

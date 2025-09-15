@@ -5,10 +5,9 @@ import { useState, useEffect, useCallback } from 'react';
 import WelcomeScreen from '../components/WelcomeScreen';
 import MainDisplay from '../components/MainDisplay';
 import ImportForm from '../components/ImportForm';
-import AudioUnlocker from '../components/AudioUnlocker'; //  <-- AudioUnlocker 在 layout 里了，其实这里可以删掉，但留着也无害
 import { wordService } from '../lib/client/wordService';
 import { SimpleCharacterSet } from '../lib/types';
-import toast from 'react-hot-toast'; // <-- 只导入 toast
+import toast from 'react-hot-toast';
 
 export default function HomePage() {
   const [activeCharacterSetId, setActiveCharacterSetId] = useState<string | null>(null);
@@ -56,7 +55,7 @@ export default function HomePage() {
 
   const renderContent = () => {
     if (isLoading) {
-      return <div className="text-2xl font-bold text-gray-700">正在加载...</div>;
+      return <div className="text-2xl font-bold">正在加载...</div>; // <-- 移除了 text-gray-700，让它使用主题前景色
     }
 
     if (showImportForm) {
@@ -83,9 +82,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex flex-col items-center justify-center p-3">
-      {/* 确保这里没有 <Toaster /> 组件 */}
+    // ▼▼▼▼▼ 核心修复：移除了背景渐变色，使其继承 layout 的背景 ▼▼▼▼▼
+    <main className="min-h-screen flex flex-col items-center justify-center p-3">
       {renderContent()}
-    </div>
+    </main>
   );
 }

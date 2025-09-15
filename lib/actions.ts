@@ -2,14 +2,15 @@
 "use server";
 
 import { prisma } from './db';
-// ✨ 1. 【核心修复】从 pinyin.server.ts 导入服务器专用函数
 import { getPinyinForCharacterOnServer } from './pinyin.server'; 
-import { Prisma } from '@prisma/client';
+// Prisma 类型现在可以被正确导入了
+import { Prisma } from '@prisma/client'; 
 import { revalidatePath } from 'next/cache';
 import iconv from 'iconv-lite';
 import { Buffer } from 'buffer';
 
-// ... (接口定义和 fixFilenameEncoding 函数保持不变) ...
+// ... 接口定义和 fixFilenameEncoding 函数保持不变 ...
+
 export interface CustomCharacter {
   id: string;
   char: string;
@@ -53,7 +54,6 @@ function fixFilenameEncoding(filename: string): string {
         return filename;
     }
 }
-
 
 export async function importFont(formData: FormData): Promise<ImportResult> {
   const file = formData.get('fontFile') as File;
@@ -112,7 +112,8 @@ export async function importFont(formData: FormData): Promise<ImportResult> {
   const fontDescription = `从文件 "${correctedFilename}" 导入，包含 ${characters.length} 个汉字。`;
 
   try {
-    const newCharacterSet = await prisma.$transaction(async (tx) => {
+    // ▼▼▼▼▼ 核心修复 1：为 tx 参数添加 Prisma.TransactionClient 类型 ▼▼▼▼▼
+    const newCharacterSet = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.characterSet.updateMany({
         where: { isDefault: true },
         data: { isDefault: false },
@@ -126,14 +127,11 @@ export async function importFont(formData: FormData): Promise<ImportResult> {
         },
       });
 
-      // ✨ 2. 【核心修复】移除 Promise.all 和 async/await，直接同步调用服务器函数
       const characterDataToCreate = characters.map((char) => {
-        // ✨ 3. 直接调用，返回的pinyinResults已经是 string[]
         const pinyinResults = getPinyinForCharacterOnServer(char); 
         
         return {
           char: char,
-          // ✨ 4. 【核心修复】直接 join 字符串数组，不再需要 .map
           pinyin: pinyinResults.join(','), 
           characterSetId: createdSet.id,
         };
@@ -156,11 +154,23 @@ export async function importFont(formData: FormData): Promise<ImportResult> {
       },
     };
 
-  } catch (error) {
+  } catch (error) { // 'error' 此处类型为 'unknown'
     console.error('导入字库失败:', error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-         return { success: false, error: '导入失败，可能存在重复数据。请检查文件内容。' };
+    
+    // ▼▼▼▼▼ 核心修复 2：安全地处理 'unknown' 类型的 error ▼▼▼▼▼
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // 这是一个已知的 Prisma 数据库错误
+      if (error.code === 'P2002') {
+         return { success: false, error: '导入失败，存在重复的字库名称。请修改文件名或删除旧字库。' };
+      }
     }
-    return { success: false, error: error instanceof Error ? `数据库错误: ${error.message}`: '发生未知错误' };
+    
+    if (error instanceof Error) {
+      // 这是一个通用的 Error 对象，我们可以安全地访问 .message
+      return { success: false, error: `数据库操作失败: ${error.message}` };
+    }
+    
+    // 如果错误不是 Error 对象，返回一个通用消息
+    return { success: false, error: '发生了一个未知类型的错误。' };
   }
 }
