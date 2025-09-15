@@ -1,31 +1,32 @@
 // app/api/pinyin/[char]/route.ts
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getPinyinForCharacterOnServer } from '@/lib/pinyin.server';
 
+// GET /api/pinyin/[char]
 export async function GET(
-  request: Request,
-  { params }: { params: { char: string } }
+  request: NextRequest,
+  ctx: RouteContext<'/api/pinyin/[char]'>
 ) {
-  const { char } = await params; // <-- 已修改：在函数开头 await params
+  const { char } = await ctx.params;
+
   try {
-    const character = decodeURIComponent(char);
+    const character = decodeURIComponent(char ?? '');
 
     if (!character || character.length !== 1) {
-      return NextResponse.json(
-        { error: '请提供单个汉字' },
-        { status: 400 }
-      );
+      return NextResponse.json([], { status: 400 }); // 返回空数组
     }
 
-    const pinyinResult = getPinyinForCharacterOnServer(character);
+    const pinyinResult = await getPinyinForCharacterOnServer(character);
 
+    if (!pinyinResult || !Array.isArray(pinyinResult) || pinyinResult.length === 0) {
+      return NextResponse.json([], { status: 404 }); // 返回空数组
+    }
+
+    // ⚡ 核心修改：直接返回数组
     return NextResponse.json(pinyinResult);
-    
-  } catch (error) {
-    console.error(`获取拼音API出错 for char: ${char}`, error); // <-- 现在可以安全使用 char
-    return NextResponse.json(
-      { error: '服务器内部错误' },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    console.error(`获取拼音API出错 for char: ${char}`, error);
+    return NextResponse.json([], { status: 500 });
   }
 }

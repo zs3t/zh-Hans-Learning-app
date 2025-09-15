@@ -105,7 +105,7 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
     setIsLoadingMainDisplay(true);
     const loadInitialData = async () => {
       try {
-        await switchCharacterSet(initialSetId);
+        if (initialSetId) await switchCharacterSet(initialSetId);
         await loadAllSetMetadata();
       } catch (error) {
         console.error("Initial data loading failed:", error);
@@ -114,8 +114,7 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
         setIsLoadingMainDisplay(false);
       }
     };
-    if (initialSetId) loadInitialData();
-    else setIsLoadingMainDisplay(false);
+    loadInitialData();
   }, [initialSetId, switchCharacterSet, loadAllSetMetadata]);
 
   useEffect(() => {
@@ -130,7 +129,7 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
     getPinyinForCharacter(currentCharacter.char)
       .then((pinyinResults) => {
         if (currentToken === pinyinRequestToken.current) {
-          setPinyinCurrentChar(pinyinResults);
+          setPinyinCurrentChar(Array.isArray(pinyinResults) ? pinyinResults : []);
           setIsPinyinLoading(false);
         }
       })
@@ -192,16 +191,12 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
 
   return (
     <>
-      {/* 弹窗 + 遮罩 */}
       {showStrokes && currentCharacter && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* 遮罩 */}
           <div
             className="absolute inset-0 bg-black/40 animate-fade-in"
             onClick={() => setShowStrokes(false)}
           />
-
-          {/* 弹窗内容 */}
           <div
             onClick={(e) => e.stopPropagation()}
             className="relative border-4 border-primary rounded-2xl bg-white dark:bg-gray-900 text-card-foreground shadow-2xl overflow-hidden animate-zoom-in"
@@ -219,8 +214,8 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
         </div>
       )}
 
-      {/* 页面主体 */}
       <div className="w-full max-w-2xl mx-auto flex flex-col gap-6 p-4 md:p-0">
+        {/* 顶部按钮 */}
         <div className="flex items-center justify-center gap-3 flex-wrap">
           {currentCharacter && (
             <>
@@ -244,6 +239,7 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
           </Button>
         </div>
 
+        {/* 字库管理 */}
         {showManager && (
           <Card className="animate-in fade-in-0 zoom-in-95">
             <CardHeader className="flex flex-row items-center justify-between">
@@ -284,6 +280,7 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
           </Card>
         )}
 
+        {/* 当前字和拼音 */}
         {!currentCharacterSet || !currentCharacter ? (
           <Card className="text-center p-8">
             <CardHeader>
@@ -302,30 +299,28 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
           <Card>
             <CardContent className="pt-6">
               <div className="text-center flex flex-col items-center gap-4">
-                <div
-                  className="flex flex-wrap justify-center gap-3 relative min-h-[40px] max-w-full w-full"
-                  style={{ width: "fit-content", minWidth: "150px" }}
-                >
-                  {pinyinCurrentChar.map((pinyin, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 bg-accent rounded-lg px-3 py-1 transition-opacity duration-200"
-                      style={{ opacity: isPinyinLoading ? 0.5 : 1 }}
-                    >
-                      <span className="text-2xl font-medium text-accent-foreground">{pinyin}</span>
-                      <AudioPlayer pinyin={pinyin} />
-                    </div>
-                  ))}
+                <div className="flex flex-wrap justify-center gap-3 relative min-h-[40px] max-w-full">
+                  {/* 拼音和播放按钮 */}
+                  {Array.isArray(pinyinCurrentChar) &&
+                    pinyinCurrentChar.map((pinyin, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 bg-accent rounded-lg px-3 py-1 transition-opacity duration-200"
+                        style={{ 
+                          backgroundColor: '#FFF9C4', // 淡黄色底色
+                          opacity: isPinyinLoading ? 0.5 : 1,
+                         }}
+                      >
+                        <div className="flex items-center gap-2">
+                        <span className="text-2xl font-medium text-accent-foreground">{pinyin}</span>
+                        <AudioPlayer pinyin={pinyin} />
+                        </div>
+                      </div>
+                    ))}
 
                   {isPinyinLoading && (
                     <div className="absolute inset-0 bg-background/70 backdrop-blur-sm flex items-center justify-center rounded-lg transition-opacity duration-200">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  )}
-
-                  {isPinyinLoading && pinyinCurrentChar.length === 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center text-xl font-medium text-accent-foreground">
-                      加载拼音中...
                     </div>
                   )}
                 </div>
