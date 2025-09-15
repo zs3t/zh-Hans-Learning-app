@@ -1,6 +1,6 @@
 # 📖 中文汉字学习应用
 
-[![Next.js](https://img.shields.io/badge/Next.js-14.2.32-000000?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.x-000000?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-latest--%28v5%2B%29-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-v22.16.0-339933?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
@@ -65,9 +65,9 @@ npm start
 
 ## 🏗️ 技术栈
 
--   **前端框架**: Next.js (App Router)
+-   **前端框架**: Next.js (App Router, v15.x)
 -   **开发语言**: TypeScript
--   **样式方案**: Tailwind CSS + 内联样式
+-   **样式方案**: Tailwind CSS v4
 -   **汉字渲染**: HanziWriter
 -   **拼音处理**: pinyin-pro
 -   **数据存储**: Prisma ORM (基于 SQLite)
@@ -160,12 +160,7 @@ pm2 startup
 -   `npm run dev` - 启动开发服务器 (具备热重载功能，默认运行在 `http://localhost:3000`)
 -   `npm run build` - 构建生产优化版本的应用 (生成 `.next` 目录)
 -   `npm run start` - 启动生产环境服务器 (此命令需在 `npm run build` 之后执行)
--   `npm run lint` - 运行 ESLint 和 Prettier 进行代码风格和潜在问题的检查
--   `npm run deploy` - **一键部署脚本**，自动化执行依赖安装、应用构建和使用 PM2 启动生产应用 (详见“快速部署”章节)
--   `npm run pm2:start` - 使用 PM2 启动生产应用 (详见“进程管理”章节)
--   `npm run pm2:stop` - 停止 PM2 管理下的应用进程
--   `npm run pm2:restart` - 重启 PM2 管理下的应用进程
--   `npm run pm2:logs` - 查看 PM2 进程的实时日志输出
+
 
 ## 🤝 贡献指南
 
