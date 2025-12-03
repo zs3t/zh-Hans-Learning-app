@@ -6,6 +6,11 @@ interface ImportResponse {
   characterSet?: CharacterSet;
 }
 
+interface LearnedStatusResponse {
+  learned: boolean;
+  error?: string;
+}
+
 export const wordService = {
   async getAllCharacterSets(): Promise<SimpleCharacterSet[]> {
     const res = await fetch('/api/characters');
@@ -75,5 +80,39 @@ export const wordService = {
     // 将 coma string 转换为数组
     data.pinyin = data.pinyin ? data.pinyin.split(',') : [];
     return data;
-  }
+  },
+
+  async isCharacterLearned(char: string): Promise<boolean> {
+    const res = await fetch(`/api/learned?char=${encodeURIComponent(char)}`);
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(data.error || 'Failed to check learned status');
+    }
+    const data: LearnedStatusResponse = await res.json();
+    return Boolean(data.learned);
+  },
+
+  async markCharacterLearned(char: string): Promise<void> {
+    const res = await fetch('/api/learned', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ char }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to mark character as learned');
+    }
+  },
+
+  async unmarkCharacterLearned(char: string): Promise<void> {
+    const res = await fetch('/api/learned', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ char }),
+    });
+    if (!res.ok && res.status !== 204) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to unmark character as learned');
+    }
+  },
 };

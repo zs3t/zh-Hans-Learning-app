@@ -9,7 +9,7 @@ import { wordService } from "../lib/client/wordService";
 import { getPinyinForCharacter } from "../lib/pinyin";
 import { CharacterSet, Character, SimpleCharacterSet } from "../lib/types";
 import { Button } from "./ui/button";
-import { Eye, ChevronsRight, BookCopy, Trash2, Plus, Settings2, Loader2 } from "lucide-react";
+import { Eye, ChevronsRight, BookCopy, Trash2, Plus, Settings2, Loader2, Download, CheckCircle2, CircleDashed } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +51,10 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
   const [showManager, setShowManager] = useState(false);
   const [showStrokes, setShowStrokes] = useState(false);
   const [hanziWriterResponsiveContentSize, setHanziWriterResponsiveContentSize] = useState(getResponsiveHanziWriterContentSize());
+  const [isCheckingLearned, setIsCheckingLearned] = useState(false);
+  const [isCurrentCharLearned, setIsCurrentCharLearned] = useState(false);
+  const [isTogglingLearned, setIsTogglingLearned] = useState(false);
+  const [isExportingLearned, setIsExportingLearned] = useState(false);
   const pinyinRequestToken = useRef(0);
 
   const loadAllSetMetadata = useCallback(async () => {
@@ -185,9 +189,97 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
+  useEffect(() => {
+    if (!currentCharacter?.char) {
+      setIsCurrentCharLearned(false);
+      setIsCheckingLearned(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsCheckingLearned(true);
+
+    wordService
+      .isCharacterLearned(currentCharacter.char)
+      .then((learned) => {
+        if (!cancelled) {
+          setIsCurrentCharLearned(learned);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          console.error("检查已学会状态失败:", error);
+          toast.error("检查已学会状态失败");
+          setIsCurrentCharLearned(false);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsCheckingLearned(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentCharacter]);
+
+  const handleToggleLearned = useCallback(async () => {
+    if (!currentCharacter?.char || isCheckingLearned || isTogglingLearned) return;
+
+    const char = currentCharacter.char;
+    setIsTogglingLearned(true);
+
+    try {
+      if (isCurrentCharLearned) {
+        await wordService.unmarkCharacterLearned(char);
+        setIsCurrentCharLearned(false);
+        toast.success(`"${char}" 已从已学会列表中移除`);
+      } else {
+        await wordService.markCharacterLearned(char);
+        setIsCurrentCharLearned(true);
+        toast.success(`"${char}" 已标记为已学会`);
+      }
+    } catch (error: any) {
+      console.error("切换已学会状态失败:", error);
+      toast.error(error?.message || "更新已学会状态失败");
+    } finally {
+      setIsTogglingLearned(false);
+    }
+  }, [currentCharacter, isCheckingLearned, isCurrentCharLearned, isTogglingLearned]);
+
+  const handleExportLearnedCharacters = useCallback(async () => {
+    if (isExportingLearned) return;
+    setIsExportingLearned(true);
+    const toastId = toast.loading("正在导出已学会字库...");
+    try {
+      const res = await fetch("/api/learned/export");
+      if (!res.ok) {
+        throw new Error("导出请求失败");
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "learned-characters.txt";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("已导出已学会字库");
+    } catch (error: any) {
+      console.error("导出已学会字库失败:", error);
+      toast.error(error?.message || "导出失败，请稍后再试");
+    } finally {
+      toast.dismiss(toastId);
+      setIsExportingLearned(false);
+    }
+  }, [isExportingLearned]);
+
   if (isLoadingMainDisplay) return <div className="text-2xl font-bold animate-pulse">正在加载字库...</div>;
 
   const hanziWriterContainerSize = hanziWriterResponsiveContentSize + 8;
+  const isLearnedButtonDisabled = !currentCharacter?.char || isCheckingLearned || isTogglingLearned;
 
   return (
     <>
@@ -237,6 +329,27 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
             <BookCopy className="mr-2 h-4 w-4" />
             {currentCharacterSet ? currentCharacterSet.name : "字库管理"}
           </Button>
+
+          <Button
+            onClick={handleToggleLearned}
+            disabled={isLearnedButtonDisabled}
+            variant={isCurrentCharLearned ? "outline" : "default"}
+            className="whitespace-nowrap"
+          >
+            {isCheckingLearned || isTogglingLearned ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 处理中...
+              </>
+            ) : isCurrentCharLearned ? (
+              <>
+                <CircleDashed className="mr-2 h-4 w-4" /> 我还不会
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="mr-2 h-4 w-4" /> 我学会了
+              </>
+            )}
+          </Button>
         </div>
 
         {/* 字库管理 */}
@@ -247,9 +360,33 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
                 <CardTitle>字库管理</CardTitle>
                 <CardDescription>当前: {currentCharacterSet?.name || "N/A"}</CardDescription>
               </div>
-              <Button size="sm" onClick={() => { setShowManager(false); onAddNewSet(); }}>
-                <Plus className="mr-2 h-4 w-4" /> 导入新字库
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleExportLearnedCharacters}
+                  disabled={isExportingLearned}
+                >
+                  {isExportingLearned ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 导出中...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" /> 导出已学会字库
+                    </>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setShowManager(false);
+                    onAddNewSet();
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> 导入新字库
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="max-h-64 overflow-y-auto">
               <div className="flex flex-col gap-2">

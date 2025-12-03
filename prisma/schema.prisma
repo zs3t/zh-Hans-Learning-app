@@ -28,3 +28,9 @@ model Character {
   createdAt      DateTime     @default(now())
   @@unique([char, characterSetId]) // <-- 添加这一行复合唯一键
 }
+
+model LearnedCharacter {
+  id        String   @id @default(cuid())
+  char      String   @unique
+  createdAt DateTime @default(now())
+}
