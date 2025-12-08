@@ -2,6 +2,9 @@
   "name": "your-hanzi-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.19.6"
+  },
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
@@ -19,10 +22,10 @@
     "hanzi-writer": "^3.7.x",
     "iconv-lite": "^0.7.0",
     "lucide-react": "^0.544.0",
-    "next": "15.x",
+    "next": "^15.5.7",
     "pinyin-pro": "^3.27.0",
-    "react": "^19",
-    "react-dom": "^19",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "react-hot-toast": "^2.6.0",
     "tailwind-merge": "^3.3.1"
   },
