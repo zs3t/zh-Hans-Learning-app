@@ -1,0 +1,13 @@
+{
+  "extends": [
+    "next/core-web-vitals",
+    "next/typescript"
+  ],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off",
+    "react/no-unescaped-entities": "off",
+    "@typescript-eslint/triple-slash-reference": "off",
+    "prefer-const": "warn",
+    "@typescript-eslint/no-unused-vars": "warn"
+  }
+}
