@@ -73,7 +73,7 @@ export async function importFont(formData: FormData): Promise<ImportResult> {
     if (textContent.charCodeAt(0) === 0xFEFF) {
         textContent = textContent.substring(1);
     }
-  } catch (e) { /* ignore */ }
+  } catch { /* ignore */ }
 
   const uniqueCharsUtf8 = new Set(
     textContent.split('')
@@ -85,7 +85,7 @@ export async function importFont(formData: FormData): Promise<ImportResult> {
     console.log("UTF-8解码失败或无有效汉字，尝试GBK...");
     try {
       textContent = iconv.decode(nodeBuffer, 'gbk');
-    } catch (e) {
+    } catch {
       return { success: false, error: '文件编码无法识别，请确保为 UTF-8 或 GBK 编码。' };
     }
   }
@@ -100,7 +100,7 @@ export async function importFont(formData: FormData): Promise<ImportResult> {
     return { success: false, error: '文件中未找到有效汉字。请确保每行一个汉字。' };
   }
   
-  let baseFontName = correctedFilename.split('.').slice(0, -1).join('.') || `新字库`;
+  const baseFontName = correctedFilename.split('.').slice(0, -1).join('.') || `新字库`;
   let fontName = baseFontName;
   let counter = 2; 
 

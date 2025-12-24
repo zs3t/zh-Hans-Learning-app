@@ -65,7 +65,7 @@ export default function ImportForm({ onSuccess, onCancel }: ImportFormProps) {
   };
 
   return (
-    <Card className="w-[350px] animate-in fade-in-0 zoom-in-95">
+    <Card className="w-80 animate-in fade-in-0 zoom-in-95">
       <CardHeader>
         <CardTitle>导入新字库</CardTitle>
         <CardDescription>

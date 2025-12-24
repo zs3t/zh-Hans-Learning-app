@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 
 export default function HomePage() {
   const [activeCharacterSetId, setActiveCharacterSetId] = useState<string | null>(null);
-  const [characterSets, setCharacterSets] = useState<SimpleCharacterSet[]>([]);
+  const [, setCharacterSets] = useState<SimpleCharacterSet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showImportForm, setShowImportForm] = useState(false);
 

@@ -159,7 +159,7 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
       setShuffledDeck(shuffledDeck.slice(1));
     } else {
       toast.success("新一轮开始！");
-      let newShuffledDeck = shuffleCharacters(currentCharacterSet.characters);
+      const newShuffledDeck = shuffleCharacters(currentCharacterSet.characters);
       if (newShuffledDeck[0].id === currentCharacter?.id) {
         [newShuffledDeck[0], newShuffledDeck[1]] = [newShuffledDeck[1], newShuffledDeck[0]];
       }
@@ -325,7 +325,7 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
             </>
           )}
 
-          <Button onClick={() => setShowManager(!showManager)} variant={showManager ? "default" : "outline"} className="max-w-[200px] truncate">
+          <Button onClick={() => setShowManager(!showManager)} variant={showManager ? "default" : "outline"} className="max-w-50 truncate">
             <BookCopy className="mr-2 h-4 w-4" />
             {currentCharacterSet ? currentCharacterSet.name : "字库管理"}
           </Button>
@@ -436,7 +436,7 @@ export default function MainDisplay({ initialSetId, onSetsChanged, onAddNewSet }
           <Card>
             <CardContent className="pt-6">
               <div className="text-center flex flex-col items-center gap-4">
-                <div className="flex flex-wrap justify-center gap-3 relative min-h-[40px] max-w-full">
+                <div className="flex flex-wrap justify-center gap-3 relative min-h-10 max-w-full">
                   {/* 拼音和播放按钮 */}
                   {Array.isArray(pinyinCurrentChar) &&
                     pinyinCurrentChar.map((pinyin, index) => (

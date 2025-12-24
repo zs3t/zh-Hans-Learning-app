@@ -1,7 +1,7 @@
 // components/StrokeAnimation.tsx
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import HanziWriter from 'hanzi-writer';
 import type { HanziWriterInstance } from '../lib/types';
 
